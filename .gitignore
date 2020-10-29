@@ -1,0 +1,13 @@
+Makefile
+metadata.json
+icons
+/screenshots/
+nuvola-app-gaana
+eu.tiliado.NuvolaAppGaana.desktop
+eu.tiliado.NuvolaAppGaana.service
+eu.tiliado.NuvolaAppGaana.appdata.xml
+nuvola-app-gaana.metainfo.xml
+eu.tiliado.WebRuntimeAppGaana.desktop
+eu.tiliado.WebRuntimeAppGaana.service
+eu.tiliado.WebRuntimeAppGaana.appdata.xml
+nuvola-app-gaana.metainfo.xml
