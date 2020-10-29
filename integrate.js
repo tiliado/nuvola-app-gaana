@@ -58,16 +58,47 @@
 
   // Extract data from the web page
   WebApp.update = function () {
+    var elms = this._getElements()
     var track = {
-      title: null,
+      title: Nuvola.queryText('.mainPlayer #stitle'),
       artist: null,
-      album: null,
-      artLocation: null,
-      rating: null
+      album: Nuvola.queryText('.mainPlayer #atitle'),
+      artLocation: Nuvola.queryAttribute('.mainPlayer .player-artwork img', 'src'),
+      rating: null,
+      length: elms.totalTime ? elms.totalTime.textContent.trim() || null : null
     }
 
+    var state
+    if (elms.pause) {
+      state = PlaybackState.PLAYING
+    } else if (elms.play) {
+      state = PlaybackState.PAUSED
+    } else {
+      state = PlaybackState.UNKNOWN
+    }
+
+    player.setPlaybackState(state)
     player.setTrack(track)
-    player.setPlaybackState(PlaybackState.UNKNOWN)
+
+    player.setCanGoPrev(!!elms.prev)
+    player.setCanGoNext(!!elms.next)
+    player.setCanPlay(!!elms.play)
+    player.setCanPause(!!elms.pause)
+
+    player.setTrackPosition(elms.elapsedTime ? elms.elapsedTime.textContent.trim() || null : null)
+    player.setCanSeek(state !== PlaybackState.UNKNOWN && elms.progressbar)
+
+    var volume = elms.volumebar && elms.volumebar.firstElementChild && elms.volumebar.firstElementChild.style.height
+    player.updateVolume(volume && volume.endsWith('%') ? volume.replace('%', '') / 100 : null)
+    player.setCanChangeVolume(!!elms.volumebar)
+
+    var shuffle = elms.shuffle ? elms.shuffle.classList.contains('on') : null
+    player.setCanShuffle(shuffle !== null)
+    player.setShuffleState(shuffle)
+
+    var repeat = this._getRepeat(elms)
+    player.setCanRepeat(repeat !== null)
+    player.setRepeatState(repeat)
 
     // Schedule the next update
     setTimeout(this.update.bind(this), 500)
@@ -75,9 +106,78 @@
 
   // Handler of playback actions
   WebApp._onActionActivated = function (emitter, name, param) {
+    var elms = this._getElements()
     switch (name) {
-      case PlayerAction.Play:
+      case PlayerAction.TOGGLE_PLAY:
+        if (elms.play) {
+          Nuvola.clickOnElement(elms.play)
+        } else {
+          Nuvola.clickOnElement(elms.pause)
+        }
         break
+      case PlayerAction.PLAY:
+        Nuvola.clickOnElement(elms.play)
+        break
+      case PlayerAction.PAUSE:
+      case PlayerAction.STOP:
+        Nuvola.clickOnElement(elms.pause)
+        break
+      case PlayerAction.PREV_SONG:
+        Nuvola.clickOnElement(elms.prev)
+        break
+      case PlayerAction.NEXT_SONG:
+        Nuvola.clickOnElement(elms.next)
+        break
+      case PlayerAction.SEEK:
+        var total = elms.totalTime ? Nuvola.parseTimeUsec(elms.totalTime.textContent.trim()) || null : null
+        if (total && param > 0 && param <= total) {
+          Nuvola.clickOnElement(elms.progressbar, param / total, 0.5)
+        }
+        break
+      case PlayerAction.CHANGE_VOLUME:
+        elms.volumebar.parentNode.style.display = 'block'
+        Nuvola.clickOnElement(elms.volumebar, 0.5, 1 - param)
+        elms.volumebar.parentNode.style.display = null
+        break
+      case PlayerAction.SHUFFLE:
+        Nuvola.clickOnElement(elms.shuffle)
+        break
+      case PlayerAction.REPEAT:
+        this._setRepeat(elms, param)
+        break
+    }
+  }
+
+  WebApp._getElements = function () {
+    // Interesting elements
+    var elms = {
+      play: document.querySelector('.mainPlayer .play-song.play'),
+      pause: document.querySelector('.mainPlayer .play-song.pause'),
+      next: document.querySelector('.mainPlayer .next-song.enabled'),
+      prev: document.querySelector('.mainPlayer .prev-song.enabled'),
+      repeat: document.querySelector('.mainPlayer .repeat.enabled'),
+      shuffle: document.querySelector('.mainPlayer .shuffle.enabled'),
+      progressbar: document.querySelector('.mainPlayer .songseek.seekbar'),
+      volumebar: document.querySelector('.mainPlayer .volumeseek.seekbar'),
+      elapsedTime: document.querySelector('.mainPlayer .timer.mq'),
+      totalTime: document.querySelector('.mainPlayer .timer.ttime')
+    }
+    return elms
+  }
+
+  WebApp._getRepeat = function (elms) {
+    if (!elms.repeat) {
+      return null
+    }
+    if (elms.repeat.classList.contains('repeatOne')) {
+      return Nuvola.PlayerRepeat.TRACK
+    }
+    return elms.repeat.classList.contains('repeatAll') ? Nuvola.PlayerRepeat.PLAYLIST : Nuvola.PlayerRepeat.NONE
+  }
+
+  WebApp._setRepeat = function (elms, repeat) {
+    while (this._getRepeat(elms) !== repeat) {
+      Nuvola.clickOnElement(elms.repeat)
     }
   }
 

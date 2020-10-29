@@ -1,7 +1,7 @@
 Gaana Change Log
 ======================
 
-1.1 - unreleased
+1.0 - unreleased
 ----------------
 
   * Initial release.
