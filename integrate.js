@@ -26,20 +26,20 @@
 
 (function (Nuvola) {
   // Create media player component
-  var player = Nuvola.$object(Nuvola.MediaPlayer)
+  const player = Nuvola.$object(Nuvola.MediaPlayer)
 
   // Handy aliases
-  var PlaybackState = Nuvola.PlaybackState
-  var PlayerAction = Nuvola.PlayerAction
+  const PlaybackState = Nuvola.PlaybackState
+  const PlayerAction = Nuvola.PlayerAction
 
   // Create new WebApp prototype
-  var WebApp = Nuvola.$WebApp()
+  const WebApp = Nuvola.$WebApp()
 
   // Initialization routines
   WebApp._onInitWebWorker = function (emitter) {
     Nuvola.WebApp._onInitWebWorker.call(this, emitter)
 
-    var state = document.readyState
+    const state = document.readyState
     if (state === 'interactive' || state === 'complete') {
       this._onPageReady()
     } else {
@@ -58,8 +58,8 @@
 
   // Extract data from the web page
   WebApp.update = function () {
-    var elms = this._getElements()
-    var track = {
+    const elms = this._getElements()
+    const track = {
       title: Nuvola.queryText('.mainPlayer #stitle'),
       artist: null,
       album: Nuvola.queryText('.mainPlayer #atitle'),
@@ -68,7 +68,7 @@
       length: elms.totalTime ? elms.totalTime.textContent.trim() || null : null
     }
 
-    var state
+    let state
     if (elms.pause) {
       state = PlaybackState.PLAYING
     } else if (elms.play) {
@@ -88,15 +88,15 @@
     player.setTrackPosition(elms.elapsedTime ? elms.elapsedTime.textContent.trim() || null : null)
     player.setCanSeek(state !== PlaybackState.UNKNOWN && elms.progressbar)
 
-    var volume = elms.volumebar && elms.volumebar.firstElementChild && elms.volumebar.firstElementChild.style.height
+    const volume = elms.volumebar && elms.volumebar.firstElementChild && elms.volumebar.firstElementChild.style.height
     player.updateVolume(volume && volume.endsWith('%') ? volume.replace('%', '') / 100 : null)
     player.setCanChangeVolume(!!elms.volumebar)
 
-    var shuffle = elms.shuffle ? elms.shuffle.classList.contains('on') : null
+    const shuffle = elms.shuffle ? elms.shuffle.classList.contains('on') : null
     player.setCanShuffle(shuffle !== null)
     player.setShuffleState(shuffle)
 
-    var repeat = this._getRepeat(elms)
+    const repeat = this._getRepeat(elms)
     player.setCanRepeat(repeat !== null)
     player.setRepeatState(repeat)
 
@@ -106,7 +106,7 @@
 
   // Handler of playback actions
   WebApp._onActionActivated = function (emitter, name, param) {
-    var elms = this._getElements()
+    const elms = this._getElements()
     switch (name) {
       case PlayerAction.TOGGLE_PLAY:
         if (elms.play) {
@@ -128,12 +128,13 @@
       case PlayerAction.NEXT_SONG:
         Nuvola.clickOnElement(elms.next)
         break
-      case PlayerAction.SEEK:
-        var total = elms.totalTime ? Nuvola.parseTimeUsec(elms.totalTime.textContent.trim()) || null : null
+      case PlayerAction.SEEK: {
+        const total = elms.totalTime ? Nuvola.parseTimeUsec(elms.totalTime.textContent.trim()) || null : null
         if (total && param > 0 && param <= total) {
           Nuvola.clickOnElement(elms.progressbar, param / total, 0.5)
         }
         break
+      }
       case PlayerAction.CHANGE_VOLUME:
         elms.volumebar.parentNode.style.display = 'block'
         Nuvola.clickOnElement(elms.volumebar, 0.5, 1 - param)
@@ -150,7 +151,7 @@
 
   WebApp._getElements = function () {
     // Interesting elements
-    var elms = {
+    const elms = {
       play: document.querySelector('.mainPlayer .play-song.play'),
       pause: document.querySelector('.mainPlayer .play-song.pause'),
       next: document.querySelector('.mainPlayer .next-song.enabled'),
